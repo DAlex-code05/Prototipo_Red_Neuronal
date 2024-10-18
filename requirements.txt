@@ -1,5 +1,6 @@
 Flask
 tensorflow
+keras
 opencv-python-headless
 numpy
 pillow

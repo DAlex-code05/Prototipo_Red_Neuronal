@@ -1,0 +1,120 @@
+/* Variables */
+:root {
+  --primary-color: #09598f; /* Azul claro */
+  --secondary-color: #000000; /* Naranja claro */
+  --background-color: #f9f9f9; /* Blanco claro */
+}
+
+/* video container */
+.Clasificador-de-Animales {
+  width: 50%; /* adjust the width to your liking */
+  height: auto;
+  margin: 20px auto; /* add margin top and bottom */
+  border: 1px solid #ddd;
+  padding: 20px;
+  position: relative; /* change to relative positioning */
+}
+
+/* Typography */
+body {
+  font-family: Arial, sans-serif;
+  display: flex; /* make the body a flex container */
+  flex-direction: column; /* stack elements vertically */
+  align-items: center; /* center horizontally */
+  justify-content: center; /* center vertically */
+  background-image: url('img/fondo.jpg'); /* add the background image */
+  background-repeat: no-repeat; /* set the background repeat to no-repeat */
+  background-size: cover; /* set the background size to cover the entire element */
+}
+
+h1 {
+  color: white;
+  margin-top: 20px;
+ }
+
+ .p-blanco{
+  color: white;
+ }
+
+h2, h3, h4, h5, h6 {
+  color: var(--primary-color);
+}
+
+p {
+  font-size: 18px;
+  color: black;
+}
+
+/* Layout */
+.container {
+  max-width: 800px;
+  margin: 40px auto;
+  padding: 20px;
+  background-color: #fff;
+  border: 1px solid #ddd;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+header {
+  background-color: var(--primary-color);
+  padding: 20px;
+  text-align: center;
+  color: #fff;
+}
+
+section {
+  margin-bottom: 40px;
+}
+
+h2 {
+  margin-top: 20px;
+}
+
+ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+li {
+  margin-bottom: 10px;
+}
+
+li strong {
+  color: var(--secondary-color);
+}
+
+/* Components */
+.nav-bar {
+  background-color: var(--primary-color);
+  padding: 10px;
+  border-bottom: 1px solid #ddd;
+}
+
+.nav-bar-brand {
+  color: #fff;
+  font-size: 24px;
+}
+
+.nav-link {
+  color: #fff;
+  transition: color 0.2s ease-in-out;
+}
+
+.nav-link:hover {
+  color: var(--secondary-color);
+}
+
+footer {
+  background-color: var(--primary-color);
+  padding: 10px;
+  text-align: center;
+  color: #fff;
+  clear: both;
+}
+
+/* Utilities */
+img {
+  border-radius: 10px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}

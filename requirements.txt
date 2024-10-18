@@ -1,6 +1,8 @@
-Flask
-tensorflow
-keras
-opencv-python-headless
-numpy
-pillow
+Flask==3.0.3
+tensorflow==2.17.0
+tensorflow-intel==2.17.0
+keras==3.5.0
+opencv-contrib-python==4.10.0.84
+opencv-python==4.10.0.84
+numpy==1.26.4
+pillow==11.0.0

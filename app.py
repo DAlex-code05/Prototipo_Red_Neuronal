@@ -3,6 +3,7 @@ import tensorflow as tf
 import cv2
 import numpy as np
 from PIL import Image
+import os  # Importar el módulo os
 
 app = Flask(__name__)
 
@@ -13,8 +14,26 @@ model = tf.keras.models.load_model('modelo_mobilenet_v2.h5')
 class_indices = {'perros': 0, 'gatos': 1, 'conejos': 2, 'pájaros': 3, 'hámsters': 4}
 classes = list(class_indices.keys())
 
-# Iniciar la captura de video
-cap = cv2.VideoCapture(0)
+# Función para verificar cámaras disponibles
+def check_cameras():
+    available_cameras = []
+    index = 0
+    while True:
+        cap = cv2.VideoCapture(index)
+        if not cap.isOpened():
+            break
+        available_cameras.append(index)
+        cap.release()
+        index += 1
+    return available_cameras
+
+# Obtener los índices de cámaras disponibles
+camera_indices = check_cameras()
+if camera_indices:
+    # Usar la primera cámara disponible
+    cap = cv2.VideoCapture(camera_indices[0])
+else:
+    raise Exception("No se encontraron cámaras disponibles.")
 
 def gen_frames():
     while True:
@@ -54,6 +73,12 @@ def index():
 @app.route('/video_feed')
 def video_feed():
     return Response(gen_frames(), mimetype='multipart/x-mixed-replace; boundary=frame')
+
+# Nuevo endpoint para mostrar la variable PATH
+@app.route('/path')
+def show_path():
+    path_value = os.environ.get('PATH', 'No se encontró la variable PATH')
+    return f'El valor de PATH es: {path_value}'
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)

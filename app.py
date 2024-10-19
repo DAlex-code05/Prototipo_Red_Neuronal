@@ -1,35 +1,29 @@
 from flask import Flask, render_template, Response
 import tensorflow as tf
 import cv2
+import os
 import numpy as np
 from PIL import Image
 
 app = Flask(__name__)
 
-# Cargar el modelo previamente entrenado
-model = tf.keras.models.load_model('modelo_mobilenet_v2.h5')
-try:
-    model = tf.keras.models.load_model('modelo_mobilenet_v2.h5')
-except Exception as e:
-    print(f"Error al cargar el modelo: {e}")
+# Leer el índice de la cámara desde la variable de entorno
+camera_index = int(os.getenv('CAMERA_INDEX', 0))  # Por defecto, usa 0 si no está definida
+
+# Intenta abrir la cámara
+cap = cv2.VideoCapture(camera_index)
+if not cap.isOpened():
+    print(f"No se pudo abrir la cámara en el índice {camera_index}")
     exit(1)  # Salir con un estado de error
 
-# Compilar el modelo (opcional, pero recomendado si se desea evitar advertencias)
+# Cargar y compilar el modelo
+model_path = os.getenv('MODEL_PATH')
+model = tf.keras.models.load_model(model_path)
 model.compile(optimizer='adam', loss='sparse_categorical_crossentropy', metrics=['accuracy'])
 
 # Obtener los índices de clase
 class_indices = {'perros': 0, 'gatos': 1, 'conejos': 2, 'pájaros': 3, 'hámsters': 4}
 classes = list(class_indices.keys())
-
-# Intenta abrir la cámara en diferentes índices
-for index in range(5):
-    cap = cv2.VideoCapture(index)
-    if cap.isOpened():
-        print(f"La cámara se ha abierto correctamente en el índice {index}")
-        break
-else:
-    print("No se pudo abrir la cámara en ningún índice")
-    exit(1)  # Salir con un estado de error
 
 def gen_frames():
     while True:
@@ -39,7 +33,6 @@ def gen_frames():
         else:
             # Preprocesar la imagen
             img = cv2.resize(frame, (224, 224))
-            img = Image.fromarray(img)
             img_array = np.array(img) / 255.0
             img_array = np.expand_dims(img_array, axis=0)
 
@@ -61,17 +54,12 @@ def gen_frames():
 
 @app.route('/')
 def index():
-    try:
-        return render_template('index.html')
-    except Exception as e:
-        return str(e), 500
+    return render_template('index.html')
 
 @app.route('/video_feed')
 def video_feed():
     return Response(gen_frames(), mimetype='multipart/x-mixed-replace; boundary=frame')
+
 if __name__ == '__main__':
-    try:
-        port = int(os.environ.get('PORT', 5000))
-        app.run(host='0.0.0.0', port=port)  # Usar la variable port
-    except Exception as e:
-        print(f"Ocurrió un error al iniciar la aplicación: {e}")
+    port = int(os.environ.get('PORT', 5000))
+    app.run(host='0.0.0.0', port=port)  # Usar la variable port

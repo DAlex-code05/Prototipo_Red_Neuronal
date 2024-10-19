@@ -4,7 +4,6 @@ import cv2
 import numpy as np
 from PIL import Image
 import os
-from werkzeug.utils import escape  # Importación de escape
 
 app = Flask(__name__)
 
@@ -82,9 +81,4 @@ def video_feed():
 @app.route('/path')
 def show_path():
     path_value = os.environ.get('PATH', 'No se encontró la variable PATH')
-    return f'El valor de PATH es: {path_value}'
-
-if __name__ == '__main__':
-    try:
-        port = int(os.environ.get('PORT', 5000))
-        app.run(host='0.0.
+    return f'El valor de PATH es: {path

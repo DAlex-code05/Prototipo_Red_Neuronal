@@ -1,4 +1,4 @@
-from flask import Flask, render_template, Response
+from flask import Flask, render_template, Response, request
 import tensorflow as tf
 import cv2
 import numpy as np
@@ -40,7 +40,11 @@ if camera_indices:
 else:
     raise Exception("No se encontraron cámaras disponibles.")
 
-def gen_frames():
+def gen_frames(camera_index=0):
+    cap = cv2.VideoCapture(camera_index)
+    if not cap.isOpened():
+        raise Exception(f"No se pudo abrir la cámara en el índice {camera_index}.")
+    
     while True:
         success, frame = cap.read()  # Lee el frame desde la cámara
         if not success:
@@ -67,6 +71,8 @@ def gen_frames():
             # Yield el frame en el formato adecuado
             yield (b'--frame\r\n'
                    b'Content-Type: image/jpeg\r\n\r\n' + frame.tobytes() + b'\r\n')
+    
+    cap.release()
 
 @app.route('/')
 def index():
@@ -77,7 +83,9 @@ def index():
 
 @app.route('/video_feed')
 def video_feed():
-    return Response(gen_frames(), mimetype='multipart/x-mixed-replace; boundary=frame')
+    # Obtener el índice de cámara desde la URL (por ejemplo, /video_feed?camera_index=1)
+    camera_index = request.args.get('camera_index', default=0, type=int)
+    return Response(gen_frames(camera_index), mimetype='multipart/x-mixed-replace; boundary=frame')
 
 # Nuevo endpoint para mostrar la variable PATH
 @app.route('/path')

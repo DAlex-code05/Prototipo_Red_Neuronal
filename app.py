@@ -3,12 +3,16 @@ import tensorflow as tf
 import cv2
 import numpy as np
 from PIL import Image
-import os
 
 app = Flask(__name__)
 
 # Cargar el modelo previamente entrenado
 model = tf.keras.models.load_model('modelo_mobilenet_v2.h5')
+try:
+    model = tf.keras.models.load_model('modelo_mobilenet_v2.h5')
+except Exception as e:
+    print(f"Error al cargar el modelo: {e}")
+    exit(1)  # Salir con un estado de error
 
 # Compilar el modelo (opcional, pero recomendado si se desea evitar advertencias)
 model.compile(optimizer='adam', loss='sparse_categorical_crossentropy', metrics=['accuracy'])
@@ -26,7 +30,8 @@ for index in range(5):  # Intenta abrir hasta 5 cámaras
         break
 
 if cap is None or not cap.isOpened():
-    raise Exception(f"No se pudo abrir la cámara en ningún índice (0-4).")
+    print("No se pudo abrir la cámara en ningún índice (0-4).")
+    exit(1)  # Salir con un estado de error
 
 # Obtener el índice de cámara desde la variable de entorno
 camera_index = int(os.environ.get('CAMERA_INDEX', 0))  # Valor por defecto 0

@@ -91,36 +91,29 @@
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
 
     <script>
-        // Acceder a la cámara
-        navigator.mediaDevices.getUserMedia({ video: true })
-            .then(stream => {
-                document.getElementById('video').srcObject = stream;
-            })
-            .catch(error => {
-                console.error('Error al acceder a la cámara:', error);
-            });
-
         // Capturar imagen y enviar a la API
-        document.getElementById('capture').addEventListener('click', () => {
-            const canvas = document.getElementById('canvas');
-            const ctx = canvas.getContext('2d');
-            ctx.drawImage(document.getElementById('video'), 0, 0, canvas.width, canvas.height);
+document.getElementById('capture').addEventListener('click', () => {
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(document.getElementById('video'), 0, 0, canvas.width, canvas.height);
 
-            const imageData = canvas.toDataURL();
-            const xhr = new XMLHttpRequest();
-            xhr.open('POST', '/api/predict', true);
-            xhr.setRequestHeader('Content-Type', 'application/json');
-            xhr.send(JSON.stringify({ image: imageData }));
+    const imageData = canvas.toDataURL();
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', '/api/predict', true);
+    xhr.setRequestHeader('Content-Type', 'application/json');
+    xhr.send(JSON.stringify({ image: imageData }));
 
-            xhr.onload = function() {
-                if (xhr.status === 200) {
-                    const response = JSON.parse(xhr.responseText);
-                    document.getElementById('apiData').innerHTML = `La imagen se clasificó como ${response.class}`;
-                } else {
-                    console.error('Error al realizar la predicción:', xhr.statusText);
-                }
-            };
-        });
+    xhr.onload = function() {
+        if (xhr.status === 200) {
+            const response = JSON.parse(xhr.responseText);
+            // Mostrar el resultado de la predicción en el div
+            document.getElementById('apiData').innerHTML = `La imagen se clasificó como: <strong>${response.class}</strong>`;
+        } else {
+            console.error('Error al realizar la predicción:', xhr.statusText);
+            document.getElementById('apiData').innerHTML = 'Error al realizar la predicción. Intenta de nuevo.';
+        }
+    };
+});
     </script>
 </body>
 </html>

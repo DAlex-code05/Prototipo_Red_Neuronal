@@ -36,11 +36,6 @@ if cap is None or not cap.isOpened():
 # Obtener el índice de cámara desde la variable de entorno
 camera_index = int(os.environ.get('CAMERA_INDEX', 0))  # Valor por defecto 0
 
-# Verificar si la cámara está disponible
-cap = cv2.VideoCapture(camera_index)
-if not cap.isOpened():
-    raise Exception(f"No se pudo abrir la cámara en el índice {camera_index}.")
-
 def gen_frames():
     while True:
         success, frame = cap.read()  # Lee el frame desde la cámara
@@ -79,13 +74,6 @@ def index():
 @app.route('/video_feed')
 def video_feed():
     return Response(gen_frames(), mimetype='multipart/x-mixed-replace; boundary=frame')
-
-# Nuevo endpoint para mostrar la variable PATH
-@app.route('/path')
-def show_path():
-    path_value = os.environ.get('PATH', 'No se encontró la variable PATH')
-    return f'El valor de PATH es: {path_value}'
-
 if __name__ == '__main__':
     try:
         port = int(os.environ.get('PORT', 5000))

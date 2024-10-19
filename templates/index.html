@@ -10,7 +10,17 @@
 </head>
 <body>
     <h1>Clasificador de Animales</h1>
-    <img src="{{ url_for('video_feed') }}" class="Clasificador-de-Animales">
+    <video id="video" class="Clasificador-de-Animales" autoplay></video>
+    <button id="capture" class="btn btn-primary mt-3">Capturar Imagen</button>
+    <canvas id="canvas" style="display:none;"></canvas>
+
+    <!-- Sección para mostrar datos de la API -->
+    <section id="api-data" class="mb-5">
+        <h2>Resultados de la Predicción</h2>
+        <div id="apiData" class="alert alert-info" role="alert">
+            Cargando datos de la API...
+        </div>
+    </section>
 
     <nav class="navbar navbar-expand-lg navbar-light bg-light">
         <a class="navbar-brand" href="#">Redes Neuronales</a>
@@ -69,11 +79,44 @@
     </div>
 
     <footer class="bg-light text-center py-4">
-        <p>&copy; 2023 Redes Neuronales. Todos los derechos reservados.</p>
+        <p>&copy;  2023 Redes Neuronales. Todos los derechos reservados.</p>
     </footer>
 
     <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+
+    <script>
+        // Acceder a la cámara
+        navigator.mediaDevices.getUserMedia({ video: true })
+            .then(stream => {
+                document.getElementById('video').srcObject = stream;
+            })
+            .catch(error => {
+                console.error('Error al acceder a la cámara:', error);
+            });
+
+        // Capturar imagen y enviar a la API
+        document.getElementById('capture').addEventListener('click', () => {
+            const canvas = document.getElementById('canvas');
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(document.getElementById('video'), 0, 0, canvas.width, canvas.height);
+
+            const imageData = canvas.toDataURL();
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', '/api/predict', true);
+            xhr.setRequestHeader('Content-Type', 'application/json');
+            xhr.send(JSON.stringify({ image: imageData }));
+
+            xhr.onload = function() {
+                if (xhr.status === 200) {
+                    const response = JSON.parse(xhr.responseText);
+                    document.getElementById('apiData').innerHTML = `La imagen se clasificó como ${response.class}`;
+                } else {
+                    console.error('Error al realizar la predicción:', xhr.statusText);
+                }
+            };
+        });
+    </script>
 </body>
 </html>

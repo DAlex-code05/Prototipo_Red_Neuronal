@@ -9,23 +9,19 @@ import io
 
 app = Flask(__name__)
 
-# Leer el índice de la cámara desde la variable de entorno
-camera_index = int(os.getenv('CAMERA_INDEX', 0))  # Por defecto, usa 0 si no está definida
-
-# Intenta abrir la cámara
-cap = cv2.VideoCapture(camera_index)
-if not cap.isOpened():
-    print(f"No se pudo abrir la cámara en el índice {camera_index}")
-    exit(1)  # Salir con un estado de error
-
 # Cargar y compilar el modelo
 model_path = os.getenv('MODEL_PATH')
+if model_path is None:
+    raise ValueError("La variable de entorno 'MODEL_PATH' no está definida. Asegúrate de establecerla correctamente.")
 model = tf.keras.models.load_model(model_path)
 model.compile(optimizer='adam', loss='sparse_categorical_crossentropy', metrics=['accuracy'])
 
 # Obtener los índices de clase
 class_indices = {'perros': 0, 'gatos': 1, 'conejos': 2, 'pájaros': 3, 'hámsters': 4}
 classes = list(class_indices.keys())
+
+# Inicializar la captura de video
+cap = cv2.VideoCapture(0)  # Asegúrate de que la cámara esté disponible
 
 def gen_frames():
     while True:
@@ -48,11 +44,12 @@ def gen_frames():
 
             # Codificar el frame en JPEG
             ret, buffer = cv2.imencode('.jpg', frame)
-            frame = np.frombuffer(buffer, dtype=np.uint8)
+            if not ret:
+                break  # Si no se pudo codificar, salir del bucle
 
             # Yield el frame en el formato adecuado
             yield (b'--frame\r\n'
-                   b'Content-Type: image/jpeg\r\n\r\n' + frame.tobytes() + b'\r\n')
+                   b'Content-Type: image/jpeg\r\n\r\n' + buffer.tobytes() + b'\r\n')
 
 @app.route('/')
 def index():

@@ -86,4 +86,6 @@ def show_path():
 if __name__ == '__main__':
     try:
         port = int(os.environ.get('PORT', 5000))
-        app.run(host='0.0.0.0', port=5000)
+        app.run(host='0.0.0.0', port=port)  # Usar la variable port
+    except Exception as e:
+        print(f"Ocurrió un error al iniciar la aplicación: {e}")

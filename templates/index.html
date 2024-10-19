@@ -88,7 +88,7 @@
 
     <script>
     // Acceder a la cámara
-    navigator.mediaDevices.getUser Media({ video: true })  // Corrección aquí
+    navigator.mediaDevices.getUserMedia({ video: true })  // Corrección aquí
         .then(stream => {
             document.getElementById('video').srcObject = stream;
         })

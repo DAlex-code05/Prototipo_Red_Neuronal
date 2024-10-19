@@ -10,6 +10,9 @@ app = Flask(__name__)
 # Cargar el modelo previamente entrenado
 model = tf.keras.models.load_model('modelo_mobilenet_v2.h5')
 
+# Compilar el modelo (opcional, pero recomendado si se desea evitar advertencias)
+model.compile(optimizer='adam', loss='sparse_categorical_crossentropy', metrics=['accuracy'])
+
 # Obtener los índices de clase
 class_indices = {'perros': 0, 'gatos': 1, 'conejos': 2, 'pájaros': 3, 'hámsters': 4}
 classes = list(class_indices.keys())
@@ -32,6 +35,8 @@ camera_indices = check_cameras()
 if camera_indices:
     # Usar la primera cámara disponible
     cap = cv2.VideoCapture(camera_indices[0])
+    if not cap.isOpened():
+        raise Exception(f"No se pudo abrir la cámara en el índice {camera_indices[0]}.")
 else:
     raise Exception("No se encontraron cámaras disponibles.")
 

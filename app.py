@@ -81,4 +81,9 @@ def video_feed():
 @app.route('/path')
 def show_path():
     path_value = os.environ.get('PATH', 'No se encontró la variable PATH')
-    return f'El valor de PATH es: {path
+    return f'El valor de PATH es: {path_value}'
+
+if __name__ == '__main__':
+    try:
+        port = int(os.environ.get('PORT', 5000))
+        app.run(host='0.0.

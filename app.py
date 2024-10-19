@@ -10,7 +10,7 @@ app = Flask(__name__)
 
 # Cargar y compilar el modelo
 model_path = os.getenv('MODEL_PATH')
-model = tf.keras.models.load _model(model_path)
+model = tf.keras.models.load_model(model_path)  # Corrección aquí
 model.compile(optimizer='adam', loss='sparse_categorical_crossentropy', metrics=['accuracy'])
 
 # Obtener los índices de clase

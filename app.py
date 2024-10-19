@@ -84,4 +84,8 @@ def show_path():
     return f'El valor de PATH es: {path_value}'
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000)
+    try:
+        port = int(os.environ.get('PORT', 5000))
+        app.run(host='0.0.0.0', port=port)
+    except Exception as e:
+        print(f"Error al iniciar la aplicación: {e}")

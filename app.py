@@ -1,4 +1,4 @@
-from flask import Flask, render_template, Response, request
+from flask import Flask, render_template, Response
 import tensorflow as tf
 import cv2
 import numpy as np
@@ -30,21 +30,15 @@ def check_cameras():
         index += 1
     return available_cameras
 
-# Obtener los índices de cámaras disponibles
-camera_indices = check_cameras()
-if camera_indices:
-    # Usar la primera cámara disponible
-    cap = cv2.VideoCapture(camera_indices[0])
-    if not cap.isOpened():
-        raise Exception(f"No se pudo abrir la cámara en el índice {camera_indices[0]}.")
-else:
-    raise Exception("No se encontraron cámaras disponibles.")
+# Obtener el índice de cámara desde la variable de entorno
+camera_index = int(os.environ.get('CAMERA_INDEX', 0))  # Valor por defecto 0
 
-def gen_frames(camera_index=0):
-    cap = cv2.VideoCapture(camera_index)
-    if not cap.isOpened():
-        raise Exception(f"No se pudo abrir la cámara en el índice {camera_index}.")
-    
+# Verificar si la cámara está disponible
+cap = cv2.VideoCapture(camera_index)
+if not cap.isOpened():
+    raise Exception(f"No se pudo abrir la cámara en el índice {camera_index}.")
+
+def gen_frames():
     while True:
         success, frame = cap.read()  # Lee el frame desde la cámara
         if not success:
@@ -71,8 +65,6 @@ def gen_frames(camera_index=0):
             # Yield el frame en el formato adecuado
             yield (b'--frame\r\n'
                    b'Content-Type: image/jpeg\r\n\r\n' + frame.tobytes() + b'\r\n')
-    
-    cap.release()
 
 @app.route('/')
 def index():
@@ -83,9 +75,7 @@ def index():
 
 @app.route('/video_feed')
 def video_feed():
-    # Obtener el índice de cámara desde la URL (por ejemplo, /video_feed?camera_index=1)
-    camera_index = request.args.get('camera_index', default=0, type=int)
-    return Response(gen_frames(camera_index), mimetype='multipart/x-mixed-replace; boundary=frame')
+    return Response(gen_frames(), mimetype='multipart/x-mixed-replace; boundary=frame')
 
 # Nuevo endpoint para mostrar la variable PATH
 @app.route('/path')

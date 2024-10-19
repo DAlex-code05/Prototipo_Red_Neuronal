@@ -17,18 +17,16 @@ model.compile(optimizer='adam', loss='sparse_categorical_crossentropy', metrics=
 class_indices = {'perros': 0, 'gatos': 1, 'conejos': 2, 'pájaros': 3, 'hámsters': 4}
 classes = list(class_indices.keys())
 
-# Función para verificar cámaras disponibles
-def check_cameras():
-    available_cameras = []
-    index = 0
-    while True:
-        cap = cv2.VideoCapture(index)
-        if not cap.isOpened():
-            break
-        available_cameras.append(index)
-        cap.release()
-        index += 1
-    return available_cameras
+# Verificar si la cámara está disponible
+cap = None
+for index in range(5):  # Intenta abrir hasta 5 cámaras
+    cap = cv2.VideoCapture(index)
+    if cap.isOpened():
+        camera_index = index
+        break
+
+if cap is None or not cap.isOpened():
+    raise Exception(f"No se pudo abrir la cámara en ningún índice (0-4).")
 
 # Obtener el índice de cámara desde la variable de entorno
 camera_index = int(os.environ.get('CAMERA_INDEX', 0))  # Valor por defecto 0

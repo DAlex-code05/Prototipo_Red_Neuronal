@@ -4,6 +4,7 @@ import cv2
 import numpy as np
 from PIL import Image
 import os
+from werkzeug.utils import escape  # Importación de escape
 
 app = Flask(__name__)
 
@@ -84,6 +85,11 @@ def show_path():
     return f'El valor de PATH es: {path_value}'
 
 if __name__ == '__main__':
+    try:
+        port = int(os.environ.get('PORT', 5000))
+        app.run(host='0.0.0.0', port=port)
+    except Exception as e:
+        print(f"Error al iniciar la aplicación: {e}")
     try:
         port = int(os.environ.get('PORT', 5000))
         app.run(host='0.0.0.0', port=port)

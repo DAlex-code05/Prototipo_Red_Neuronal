@@ -23,34 +23,6 @@ classes = list(class_indices.keys())
 # Inicializar la captura de video
 cap = cv2.VideoCapture(0)  # Asegúrate de que la cámara esté disponible
 
-def gen_frames():
-    while True:
-        success, frame = cap.read()  # Lee el frame desde la cámara
-        if not success:
-            break
-        else:
-            # Preprocesar la imagen
-            img = cv2.resize(frame, (224, 224))
-            img_array = np.array(img) / 255.0
-            img_array = np.expand_dims(img_array, axis=0)
-
-            # Realizar la predicción
-            predictions = model.predict(img_array)
-            predicted_class_index = np.argmax(predictions)
-            predicted_class = classes[predicted_class_index]
-
-            # Mostrar el resultado en la imagen
-            cv2.putText(frame, f'Predicción: {predicted_class}', (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
-
-            # Codificar el frame en JPEG
-            ret, buffer = cv2.imencode('.jpg', frame)
-            if not ret:
-                break  # Si no se pudo codificar, salir del bucle
-
-            # Yield el frame en el formato adecuado
-            yield (b'--frame\r\n'
-                   b'Content-Type: image/jpeg\r\n\r\n' + buffer.tobytes() + b'\r\n')
-
 @app.route('/')
 def index():
     return render_template('index.html')
@@ -78,6 +50,12 @@ def predict():
     predictions = model.predict(img_array)
     predicted_class_index = np.argmax(predictions)
     predicted_class = classes[predicted_class_index]
+
+    return jsonify({'class': predicted_class})
+
+if __name__ == '__main__':
+    port = int(os.environ.get('PORT', 5000))
+    app.run(host='0.0.0.0', port=port)  # Usar la variable port
 
     return jsonify({'class': predicted_class})
 

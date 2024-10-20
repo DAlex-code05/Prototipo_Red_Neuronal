@@ -10,7 +10,7 @@ import io
 app = Flask(__name__)
 
 # Cargar la ruta del modelo desde la variable de entorno
-model_path = os.getenv('MODEL_PATH', 'modelo_mobilenet_v2.h5')  # Valor por defecto si no se establece la variable
+model_path = 'modelo_mobilenet_v2.h5'
 model = tf.keras.models.load_model(model_path)
 model.compile(optimizer='adam', loss='sparse_categorical_crossentropy', metrics=['accuracy'])
 
@@ -19,9 +19,9 @@ class_indices = {'perros': 0, 'gatos': 1, 'conejos': 2, 'pájaros': 3, 'hámster
 classes = list(class_indices.keys())
 
 def gen_frames():
-    cap = cv2.VideoCapture(0)  # Asegúrate de inicializar la captura de video
+    cap = cv2.VideoCapture(1)
     while True:
-        success, frame = cap.read()  # Lee el frame desde la cámara
+        success, frame = cap.read()
         if not success:
             break
         else:
@@ -81,5 +81,5 @@ def predict():
     return jsonify({'class': predicted_class})
 
 if __name__ == '__main__':
-    port = 5000  # Puedes cambiar el puerto si es necesario
-    app.run(host='0.0.0.0', port=port)  # Usar la variable port
+    port = 5000
+    app.run(host='0.0.0.0', port=port)

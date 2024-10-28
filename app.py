@@ -1,6 +1,5 @@
 from flask import Flask, render_template, Response, request, jsonify
 import tensorflow as tf
-import cv2
 import numpy as np
 from PIL import Image
 import base64
@@ -19,35 +18,6 @@ classes = list(class_indices.keys())
 
 # Umbral de confianza para las predicciones
 confidence_threshold = 0.7
-
-def gen_frames():
-    cap = cv2.VideoCapture(0)  # Cambia el número de la cámara si es necesario
-    while True:
-        success, frame = cap.read()
-        if not success:
-            break
-        else:
-            # Preprocesar la imagen
-            img = cv2.resize(frame, (224, 224))
-            img_array = np.array(img) / 255.0
-            img_array = np.expand_dims(img_array, axis=0)
-
-            # Realizar la predicción
-            predictions = model.predict(img_array)
-            predicted_class_index = np.argmax(predictions)
-            confidence = predictions[0][predicted_class_index]  # Obtener la confianza de la predicción
-            predicted_class = classes[predicted_class_index]
-
-            # Aquí puedes decidir si mostrar la predicción o no
-            # cv2.putText(frame, f'Predicción: {predicted_class}', (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
-
-            # Codificar el frame en JPEG
-            ret, buffer = cv2.imencode('.jpg', frame)
-            frame = np.frombuffer(buffer, dtype=np.uint8)
-
-            # Yield el frame en el formato adecuado
-            yield (b'--frame\r\n'
-                   b'Content-Type: image/jpeg\r\n\r\n' + frame.tobytes() + b'\r\n')
 
 @app.route('/')
 def index():

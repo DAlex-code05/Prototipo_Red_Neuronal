@@ -5,68 +5,145 @@ from PIL import Image
 import base64
 import io
 import os
+import logging
+import traceback
+from datetime import datetime
+
+# Configuración del logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
 
-# Cargar el modelo
-model_path = 'modelo_mobilenet_v2.h5'  # Cambia esto a la ruta de tu modelo
-model = tf.keras.models.load_model(model_path)
-model.compile(optimizer='adam', loss='sparse_categorical_crossentropy', metrics=['accuracy'])
+# Configuración de variables globales
+MODEL_PATH = 'modelo_mobilenet_v2.h5'
+IMAGE_SIZE = (224, 224)
+CONFIDENCE_THRESHOLD = 0.7
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg'}
+MAX_IMAGE_SIZE = 10 * 1024 * 1024  # 10MB
 
-# Obtener los índices de clase
+# Cargar el modelo
+try:
+    model = tf.keras.models.load_model(MODEL_PATH)
+    model.compile(optimizer='adam', loss='sparse_categorical_crossentropy', metrics=['accuracy'])
+    logger.info("Modelo cargado exitosamente")
+except Exception as e:
+    logger.error(f"Error al cargar el modelo: {str(e)}")
+    raise
+
+# Clases e índices
 class_indices = {'perros': 0, 'gatos': 1, 'conejos': 2, 'pájaros': 3, 'hámsters': 4}
 classes = list(class_indices.keys())
 
-# Umbral de confianza para las predicciones
-confidence_threshold = 0.7
+def allowed_file_size(image_data):
+    """Verifica si el tamaño de la imagen está dentro de los límites permitidos"""
+    return len(image_data) <= MAX_IMAGE_SIZE
+
+def preprocess_image(image):
+    """Preprocesa la imagen para la predicción"""
+    try:
+        if image.mode != 'RGB':
+            image = image.convert('RGB')
+        
+        image = image.resize(IMAGE_SIZE)
+        img_array = np.array(image) / 255.0
+        return np.expand_dims(img_array, axis=0)
+    except Exception as e:
+        logger.error(f"Error en el preprocesamiento de la imagen: {str(e)}")
+        raise
+
+def validate_image_data(image_data):
+    """Valida los datos de la imagen"""
+    if not image_data:
+        raise ValueError("Datos de imagen vacíos")
+    
+    if not allowed_file_size(image_data):
+        raise ValueError(f"Tamaño de imagen excede el límite de {MAX_IMAGE_SIZE/1024/1024}MB")
 
 @app.route('/')
 def index():
-    return render_template('index.html')
+    try:
+        return render_template('index.html')
+    except Exception as e:
+        logger.error(f"Error al cargar la página principal: {str(e)}")
+        return jsonify({'error': 'Error interno del servidor'}), 500
 
-@app.route('/video_feed')
-def video_feed():
-    return Response(gen_frames(), mimetype='multipart/x-mixed-replace; boundary=frame')
-
-# Ruta para la predicción
 @app.route('/api/predict', methods=['POST'])
 def predict():
-    data = request.get_json()
+    start_time = datetime.now()
+    logger.info("Iniciando nueva predicción")
     
-    # Verificar que se haya proporcionado la imagen
-    if 'image' not in data:
-        return jsonify({'error': 'No se proporcionó la imagen'}), 400
-
-    image_data = data['image']
-
-    # Decodificar la imagen
     try:
-        image_data = image_data.split(',')[1]  # Eliminar el prefijo "data:image/png;base64,"
-        image = Image.open(io.BytesIO(base64.b64decode(image_data)))
+        # Validar request
+        if not request.is_json:
+            return jsonify({'error': 'Se requiere Content-Type: application/json'}), 400
+
+        data = request.get_json()
+        if not data or 'image' not in data:
+            return jsonify({'error': 'No se proporcionó la imagen'}), 400
+
+        image_data = data['image']
+
+        # Validar formato base64
+        try:
+            image_data = image_data.split(',')[1]
+            validate_image_data(image_data)
+        except ValueError as e:
+            return jsonify({'error': str(e)}), 400
+        except Exception as e:
+            logger.error(f"Error al procesar datos base64: {str(e)}")
+            return jsonify({'error': 'Formato de imagen inválido'}), 400
+
+        # Decodificar y procesar imagen
+        try:
+            image = Image.open(io.BytesIO(base64.b64decode(image_data)))
+            processed_image = preprocess_image(image)
+        except Exception as e:
+            logger.error(f"Error al procesar la imagen: {str(e)}")
+            return jsonify({'error': 'Error al procesar la imagen'}), 400
+
+        # Realizar predicción
+        try:
+            predictions = model.predict(processed_image)
+            predicted_class_index = np.argmax(predictions)
+            confidence = float(predictions[0][predicted_class_index])
+            
+            # Aplicar umbral de confianza
+            predicted_class = classes[predicted_class_index] if confidence >= CONFIDENCE_THRESHOLD else "animal no identificado"
+            
+            # Registrar tiempo de procesamiento
+            processing_time = (datetime.now() - start_time).total_seconds()
+            logger.info(f"Predicción completada en {processing_time:.2f} segundos")
+            
+            return jsonify({
+                'class': predicted_class,
+                'confidence': confidence,
+                'processing_time': processing_time
+            })
+
+        except Exception as e:
+            logger.error(f"Error en la predicción: {str(e)}")
+            return jsonify({'error': 'Error al realizar la predicción'}), 500
+
     except Exception as e:
-        return jsonify({'error': 'Error al procesar la imagen: ' + str(e)}), 400
+        logger.error(f"Error inesperado: {str(e)}\n{traceback.format_exc()}")
+        return jsonify({'error': 'Error interno del servidor'}), 500
 
-    # Convertir la imagen a RGB si es necesario
-    if image.mode != 'RGB':
-        image = image.convert('RGB')
+@app.errorhandler(404)
+def not_found_error(error):
+    return jsonify({'error': 'Recurso no encontrado'}), 404
 
-    # Preprocesar la imagen
-    image = image.resize((224, 224))  # Cambia el tamaño según lo que necesite tu modelo
-    img_array = np.array(image) / 255.0
-    img_array = np.expand_dims(img_array, axis=0)
-
-    # Realizar la predicción
-    predictions = model.predict(img_array)
-    predicted_class_index = np.argmax(predictions)
-    confidence = predictions[0][predicted_class_index]  # Obtener la confianza de la predicción
-    predicted_class = classes[predicted_class_index]
-
-    # Verificar si la confianza es menor que el umbral
-    if confidence < confidence_threshold:
-        predicted_class = "animal no identificado"
-
-    return jsonify({'class': predicted_class, 'confidence': float(confidence)})
+@app.errorhandler(500)
+def internal_error(error):
+    logger.error(f"Error interno del servidor: {str(error)}")
+    return jsonify({'error': 'Error interno del servidor'}), 500
 
 if __name__ == '__main__':
-    port = int(os.environ.get('PORT', 5000))  # Usa la variable de entorno PORT
-    app.run(host='0.0.0.0', port=port, debug=os.environ.get('FLASK_DEBUG', 0))
+    port = int(os.environ.get('PORT', 5000))
+    debug = bool(int(os.environ.get('FLASK_DEBUG', 0)))
+    
+    logger.info(f"Iniciando aplicación en puerto {port}")
+    app.run(host='0.0.0.0', port=port, debug=debug)

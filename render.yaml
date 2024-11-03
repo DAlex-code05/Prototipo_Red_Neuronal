@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: 
+    name: clasificador-animales
     env: python
     buildCommand: pip install -r requirements.txt
     startCommand: gunicorn app:app

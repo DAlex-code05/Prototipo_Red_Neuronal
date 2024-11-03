@@ -22,6 +22,14 @@
         </div>
     </section>
 
+    <!-- Nueva sección para el historial de predicciones -->
+    <section id="prediction-history" class="mb-5">
+        <h2>Historial de Predicciones</h2>
+        <div id="historyList" class="list-group">
+            <!-- Aquí se mostrarán las predicciones anteriores -->
+        </div>
+    </section>
+
     <nav class="navbar navbar-expand-lg navbar-light bg-light">
         <a class="navbar-brand" href="#">Redes Neuronales</a>
         <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
@@ -84,44 +92,6 @@
     <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd /popper.min.js"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
-
-    <script>
-        // Acceder a la cámara
-        navigator.mediaDevices.getUserMedia({ video: true })
-            .then(stream => {
-                document.getElementById('video').srcObject = stream;
-            })
-            .catch(error => {
-                console.error('Error al acceder a la cámara:', error);
-                document.getElementById('apiData').innerHTML = 'No se pudo acceder a la cámara.';
-            });
-
-        // Capturar imagen y enviar a la API
-        document.getElementById('capture').addEventListener('click', () => {
-            const canvas = document.getElementById('canvas');
-            const ctx = canvas.getContext('2d');
-            canvas.width = document.getElementById('video').videoWidth;
-            canvas.height = document.getElementById('video').videoHeight;
-            ctx.drawImage(document.getElementById('video'), 0, 0, canvas.width, canvas.height);
-
-            // Convertir la imagen a Data URL
-            const imageData = canvas.toDataURL('image/png'); // Especificar el formato PNG
-
-            // Enviar la imagen a la API
-            const xhr = new XMLHttpRequest();
-            xhr.open('POST', '/api/predict', true);
-            xhr.setRequestHeader('Content-Type', 'application/json');
-            xhr.send(JSON.stringify({ image: imageData }));
-
-            xhr.onload = function() {
-                if (xhr.status === 200) {
-                    const response = JSON.parse(xhr.responseText);
-                    document.getElementById('apiData').innerHTML = `La imagen se clasificó como ${response.class}`;
-                } else {
-                    document.getElementById('apiData').innerHTML = 'Error al realizar la predicción: ' + xhr.statusText;
-                }
-            };
-        });
-    </script>
+    <script src="/static/js/main.js"></script>
 </body>
 </html>

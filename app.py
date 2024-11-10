@@ -9,45 +9,42 @@ import logging
 import traceback
 from datetime import datetime
 
-# Configuración del logging
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
-logger = logging.getLogger(__name__)
 
+logger = logging.getLogger(__name__)
 app = Flask(__name__)
 
-# Configuración de variables globales
 MODEL_PATH = 'modelo_mobilenet_v2.h5'
 IMAGE_SIZE = (224, 224)
 CONFIDENCE_THRESHOLD = 0.7
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg'}
-MAX_IMAGE_SIZE = 10 * 1024 * 1024  # 10MB
+MAX_IMAGE_SIZE = 10 * 1024 * 1024
 
-# Cargar el modelo
 try:
     model = tf.keras.models.load_model(MODEL_PATH)
-    model.compile(optimizer='adam', loss='sparse_categorical_crossentropy', metrics=['accuracy'])
+    model.compile(
+        optimizer='adam',
+        loss='sparse_categorical_crossentropy',
+        metrics=['accuracy']
+    )
     logger.info("Modelo cargado exitosamente")
 except Exception as e:
     logger.error(f"Error al cargar el modelo: {str(e)}")
     raise
 
-# Clases e índices
 class_indices = {'perros': 0, 'gatos': 1, 'conejos': 2, 'pájaros': 3, 'hámsters': 4}
 classes = list(class_indices.keys())
 
 def allowed_file_size(image_data):
-    """Verifica si el tamaño de la imagen está dentro de los límites permitidos"""
     return len(image_data) <= MAX_IMAGE_SIZE
 
 def preprocess_image(image):
-    """Preprocesa la imagen para la predicción"""
     try:
         if image.mode != 'RGB':
             image = image.convert('RGB')
-        
         image = image.resize(IMAGE_SIZE)
         img_array = np.array(image) / 255.0
         return np.expand_dims(img_array, axis=0)
@@ -56,10 +53,8 @@ def preprocess_image(image):
         raise
 
 def validate_image_data(image_data):
-    """Valida los datos de la imagen"""
     if not image_data:
         raise ValueError("Datos de imagen vacíos")
-    
     if not allowed_file_size(image_data):
         raise ValueError(f"Tamaño de imagen excede el límite de {MAX_IMAGE_SIZE/1024/1024}MB")
 
@@ -77,7 +72,6 @@ def predict():
     logger.info("Iniciando nueva predicción")
     
     try:
-        # Validar request
         if not request.is_json:
             return jsonify({'error': 'Se requiere Content-Type: application/json'}), 400
 
@@ -87,7 +81,6 @@ def predict():
 
         image_data = data['image']
 
-        # Validar formato base64
         try:
             image_data = image_data.split(',')[1]
             validate_image_data(image_data)
@@ -97,7 +90,6 @@ def predict():
             logger.error(f"Error al procesar datos base64: {str(e)}")
             return jsonify({'error': 'Formato de imagen inválido'}), 400
 
-        # Decodificar y procesar imagen
         try:
             image = Image.open(io.BytesIO(base64.b64decode(image_data)))
             processed_image = preprocess_image(image)
@@ -105,19 +97,13 @@ def predict():
             logger.error(f"Error al procesar la imagen: {str(e)}")
             return jsonify({'error': 'Error al procesar la imagen'}), 400
 
-        # Realizar predicción
         try:
             predictions = model.predict(processed_image)
             predicted_class_index = np.argmax(predictions)
             confidence = float(predictions[0][predicted_class_index])
-            
-            # Aplicar umbral de confianza
             predicted_class = classes[predicted_class_index] if confidence >= CONFIDENCE_THRESHOLD else "animal no identificado"
-            
-            # Registrar tiempo de procesamiento
             processing_time = (datetime.now() - start_time).total_seconds()
             logger.info(f"Predicción completada en {processing_time:.2f} segundos")
-            
             return jsonify({
                 'class': predicted_class,
                 'confidence': confidence,
@@ -138,7 +124,7 @@ def not_found_error(error):
 
 @app.errorhandler(500)
 def internal_error(error):
-    logger.error(f"Error interno del servidor: {str(error)}")
+    logger.error(f" Error interno del servidor: {str(error)}")
     return jsonify({'error': 'Error interno del servidor'}), 500
 
 if __name__ == '__main__':
